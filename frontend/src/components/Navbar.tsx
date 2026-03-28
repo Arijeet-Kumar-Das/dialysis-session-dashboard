@@ -1,12 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import PatientForm from "./PatientForm";
-import { useToast } from "../context/ToastContext";
 
 export default function Navbar() {
     const location = useLocation();
     const [showPatientForm, setShowPatientForm] = useState(false);
-    const { showToast } = useToast();
 
     return (
         <>
@@ -98,9 +96,7 @@ export default function Navbar() {
             {showPatientForm && (
                 <PatientForm
                     editingPatient={null}
-                    onSuccess={() => {
-                        showToast("Patient added successfully", "success");
-                    }}
+                    onSuccess={() => {}}
                     onClose={() => setShowPatientForm(false)}
                 />
             )}

@@ -253,9 +253,7 @@ export default function Patients() {
                 <SessionForm
                     patients={patients}
                     defaultPatientId={selectedPatientId}
-                    onSuccess={() => {
-                        showToast("Session created successfully", "success");
-                    }}
+                    onSuccess={() => {}}
                     onClose={() => setShowSessionForm(false)}
                 />
             )}

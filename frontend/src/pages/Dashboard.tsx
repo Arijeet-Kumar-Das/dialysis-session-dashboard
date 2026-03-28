@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { Session } from "../types";
 import { useSessions } from "../hooks/useSessions";
 import { usePatients } from "../hooks/usePatients";
-import { useToast } from "../context/ToastContext";
 import PatientCard from "../components/PatientCard";
 import SessionForm from "../components/SessionForm";
 import Spinner from "../components/ui/Spinner";
@@ -16,7 +15,6 @@ export default function Dashboard() {
         selectedUnit || undefined
     );
     const { patients } = usePatients();
-    const { showToast } = useToast();
 
     const [showForm, setShowForm] = useState(false);
     const [editingSession, setEditingSession] = useState<Session | null>(null);
@@ -35,12 +33,8 @@ export default function Dashboard() {
         setShowForm(true);
     };
 
-    const handleFormSuccess = (wasEditing: boolean) => {
+    const handleFormSuccess = () => {
         refresh();
-        showToast(
-            wasEditing ? "Session updated successfully" : "Session created successfully",
-            "success"
-        );
     };
 
     const filteredSessions = onlyAnomalies

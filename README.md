@@ -1,4 +1,8 @@
+
 # Dialysis Session Intake & Anomaly Dashboard
+
+This project simulates a nurse’s workflow during a dialysis shift, 
+focusing on real-time monitoring and early detection of unsafe conditions.
 
 A full-stack web application for dialysis centers to track patient 
 sessions, record vitals, and surface anomalies in real time during 
@@ -64,7 +68,7 @@ npm install
 Create a `.env` file inside `backend/`:
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://Arijeet_123:Arijeet_BMS123@cluster0.8oqo8rv.mongodb.net/patient_dialysis_system?appName=Cluster0
+MONGODB_URI=your-mongodb-string
 NODE_ENV=development
 ```
 
@@ -201,8 +205,20 @@ create/update time. Thresholds live in:
 
 ## AI Usage Disclosure
 
-AI tools were used during development as a learning and productivity 
-aid — primarily for looking up TypeScript syntax, Express patterns, 
-and Jest/Vitest testing conventions. All architecture decisions, 
-business logic, schema design, and trade-offs were designed and 
-reviewed manually.
+AI tools were used during development as a learning and productivity aid:
+
+- **Claude (via Antigravity)** — used to analyze the existing backend 
+  codebase and generate the `API.md` documentation file based on the 
+  actual implemented routes and response shapes.
+- **AI assistance (general)** — used for looking up TypeScript syntax, 
+  Express patterns, and Jest/Vitest testing conventions.
+
+All architecture decisions, schema design, business logic, anomaly 
+detection thresholds, and trade-offs were designed and reviewed manually.
+
+
+## Future Improvements
+
+- Editable anomaly thresholds via admin UI
+- Real-time updates using WebSockets
+- Multi-unit scheduling support
