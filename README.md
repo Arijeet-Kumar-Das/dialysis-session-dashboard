@@ -64,7 +64,7 @@ npm install
 Create a `.env` file inside `backend/`:
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_atlas_connection_string
+MONGODB_URI=mongodb+srv://Arijeet_123:Arijeet_BMS123@cluster0.8oqo8rv.mongodb.net/patient_dialysis_system?appName=Cluster0
 NODE_ENV=development
 ```
 
