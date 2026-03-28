@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createPatient } from "../api/patients";
+import { useToast } from "../context/ToastContext";
 
 interface PatientFormProps {
     onSuccess: () => void;
@@ -7,6 +8,7 @@ interface PatientFormProps {
 }
 
 export default function PatientForm({ onSuccess, onClose }: PatientFormProps) {
+    const { showToast } = useToast();
     const [form, setForm] = useState({
         name: "",
         age: "",
@@ -44,7 +46,7 @@ export default function PatientForm({ onSuccess, onClose }: PatientFormProps) {
             onSuccess();
             onClose();
         } catch {
-            setError("Failed to create patient. Please try again.");
+            showToast("Failed to create patient. Please try again.", "error");
         } finally {
             setLoading(false);
         }

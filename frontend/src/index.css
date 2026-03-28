@@ -3,3 +3,59 @@
 body {
     font-family: "DM Sans", sans-serif;
 }
+
+/* ── Fade-in-up animation for cards and sections ── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.45s ease-out both;
+}
+
+/* ── Subtle pulse glow for anomaly cards ── */
+@keyframes anomalyPulse {
+    0%, 100% {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+    50% {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 0 5px rgba(239, 68, 68, 0.08);
+    }
+}
+
+.anomaly-pulse {
+    animation: anomalyPulse 2.5s ease-in-out infinite;
+}
+
+/* ── Toast slide-in from right ── */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(80px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.3s ease-out both;
+}
+
+/* ── Gentle shimmer for the "last updated" dot ── */
+@keyframes liveDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.animate-live-dot {
+    animation: liveDot 2s ease-in-out infinite;
+}

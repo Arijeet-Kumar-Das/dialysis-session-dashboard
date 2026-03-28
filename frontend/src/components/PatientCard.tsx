@@ -18,8 +18,11 @@ export default function PatientCard({
 
     return (
         <div
-            className={`bg-white rounded-xl shadow-sm border transition-all duration-200 hover:shadow-md ${hasAnomalies ? "border-l-4 border-l-red-400 border-r border-t border-b border-slate-100" : "border border-slate-100"
-                }`}
+            className={`bg-white rounded-xl shadow-sm border transition-all duration-200 hover:shadow-md ${
+                hasAnomalies
+                    ? "border-l-4 border-l-red-400 border-r border-t border-b border-slate-100 anomaly-pulse"
+                    : "border border-slate-100"
+            }`}
         >
             {/* Card Header */}
             <div className="flex items-start justify-between px-5 pt-5 pb-3">
@@ -79,7 +82,7 @@ export default function PatientCard({
                     onClick={() => onEditNotes(session)}
                     className="flex-1 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 py-2 rounded-lg transition-colors"
                 >
-                    Edit Notes
+                    Edit Session
                 </button>
                 <button
                     onClick={() => onAddSession(patient._id)}
@@ -92,7 +95,6 @@ export default function PatientCard({
     );
 }
 
-// Small helper component for vitals
 function VitalCell({
     label,
     value,

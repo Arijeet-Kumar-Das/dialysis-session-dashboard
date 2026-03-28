@@ -2,21 +2,21 @@ import { useState } from "react";
 import type { Session } from "../types";
 import { useSessions } from "../hooks/useSessions";
 import { usePatients } from "../hooks/usePatients";
+import { useToast } from "../context/ToastContext";
 import PatientCard from "../components/PatientCard";
 import SessionForm from "../components/SessionForm";
-import Spinner from "../components/ui/Spinner"
+import Spinner from "../components/ui/Spinner";
 import EmptyState from "../components/ui/EmptyState";
-import PatientForm from "../components/PatientForm";
 
 export default function Dashboard() {
-    const { sessions, loading, error, refresh } = useSessions();
+    const { sessions, loading, error, refresh, lastUpdated } = useSessions();
     const { patients } = usePatients();
+    const { showToast } = useToast();
 
     const [showForm, setShowForm] = useState(false);
     const [editingSession, setEditingSession] = useState<Session | null>(null);
     const [defaultPatientId, setDefaultPatientId] = useState<string>("");
     const [onlyAnomalies, setOnlyAnomalies] = useState(false);
-    const [showPatientForm, setShowPatientForm] = useState(false);
 
     const handleAddSession = (patientId: string) => {
         setDefaultPatientId(patientId);
@@ -24,58 +24,82 @@ export default function Dashboard() {
         setShowForm(true);
     };
 
-    const handleEditNotes = (session: Session) => {
+    const handleEditSession = (session: Session) => {
         setEditingSession(session);
         setDefaultPatientId("");
         setShowForm(true);
     };
 
-    const handleFormSuccess = () => {
+    const handleFormSuccess = (wasEditing: boolean) => {
         refresh();
+        showToast(
+            wasEditing ? "Session updated successfully" : "Session created successfully",
+            "success"
+        );
     };
 
     const filteredSessions = onlyAnomalies
         ? sessions.filter((s) => s.anomalies.length > 0)
         : sessions;
 
-    // Stats for header
+    // Stats
     const totalSessions = sessions.length;
     const anomalySessions = sessions.filter((s) => s.anomalies.length > 0).length;
     const completedSessions = sessions.filter((s) => s.status === "completed").length;
     const inProgressSessions = sessions.filter((s) => s.status === "in_progress").length;
 
     return (
-        <div className="min-h-screen bg-[#F0F2F5]">
-            {/* Navbar */}
-            <nav className="bg-[#0F1B2D] px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
+                <StatCard label="Today's Sessions" value={totalSessions} color="text-slate-700" />
+                <StatCard label="In Progress" value={inProgressSessions} color="text-amber-600" />
+                <StatCard label="Completed" value={completedSessions} color="text-emerald-600" />
+                <StatCard
+                    label="Anomalies Detected"
+                    value={anomalySessions}
+                    color="text-red-500"
+                    highlight={anomalySessions > 0}
+                />
+            </div>
+
+            {/* Filter Bar */}
+            <div
+                className="flex flex-wrap items-center justify-between gap-3 mb-5 animate-fade-in-up"
+                style={{ animationDelay: "80ms" }}
+            >
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h1 className="text-white font-semibold text-sm leading-tight">
-                            Dialysis Dashboard
-                        </h1>
-                        <p className="text-slate-400 text-xs">Session Intake & Anomaly Monitor</p>
-                    </div>
+                    <h2 className="text-slate-700 font-semibold text-sm">
+                        {onlyAnomalies ? "Patients with Anomalies" : "All Patients Today"}
+                        <span className="ml-2 text-slate-400 font-normal">
+                            ({filteredSessions.length})
+                        </span>
+                    </h2>
+                    {lastUpdated && (
+                        <span className="hidden sm:flex items-center gap-1.5 text-slate-400 text-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-dot" />
+                            Updated {lastUpdated.toLocaleTimeString()}
+                        </span>
+                    )}
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-slate-400 text-xs">
-                        {new Date().toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                        })}
-                    </span>
+                <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setShowPatientForm(true)}
-                        className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+                        onClick={() => setOnlyAnomalies((prev) => !prev)}
+                        className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${onlyAnomalies
+                                ? "bg-red-50 border-red-200 text-red-600"
+                                : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                            }`}
                     >
-                        + Add Patient
+                        <span
+                            className={`w-2 h-2 rounded-full ${onlyAnomalies ? "bg-red-500" : "bg-slate-300"
+                                }`}
+                        />
+                        {onlyAnomalies ? "Showing anomalies only" : "Filter: Anomalies only"}
+                        {anomalySessions > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-mono leading-none">
+                                {anomalySessions}
+                            </span>
+                        )}
                     </button>
                     <button
                         onClick={() => {
@@ -88,74 +112,44 @@ export default function Dashboard() {
                         <span>+</span> New Session
                     </button>
                 </div>
-            </nav>
+            </div>
 
-            <div className="max-w-7xl mx-auto px-6 py-6">
-                {/* Stats Row */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                    <StatCard label="Today's Sessions" value={totalSessions} color="text-slate-700" />
-                    <StatCard label="In Progress" value={inProgressSessions} color="text-amber-600" />
-                    <StatCard label="Completed" value={completedSessions} color="text-emerald-600" />
-                    <StatCard
-                        label="Anomalies Detected"
-                        value={anomalySessions}
-                        color="text-red-500"
-                        highlight={anomalySessions > 0}
-                    />
+            {/* Error Banner */}
+            {error && (
+                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+                    ⚠️ {error} — Showing last known data.
                 </div>
+            )}
 
-                {/* Filter Bar */}
-                <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-slate-700 font-semibold text-sm">
-                        {onlyAnomalies ? "Patients with Anomalies" : "All Patients Today"}
-                        <span className="ml-2 text-slate-400 font-normal">
-                            ({filteredSessions.length})
-                        </span>
-                    </h2>
-                    <button
-                        onClick={() => setOnlyAnomalies((prev) => !prev)}
-                        className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${onlyAnomalies
-                            ? "bg-red-50 border-red-200 text-red-600"
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                            }`}
-                    >
-                        <span
-                            className={`w-2 h-2 rounded-full ${onlyAnomalies ? "bg-red-500" : "bg-slate-300"
-                                }`}
-                        />
-                        {onlyAnomalies ? "Showing anomalies only" : "Filter: Anomalies only"}
-                    </button>
-                </div>
-
-                {/* Content */}
-                {loading ? (
-                    <Spinner />
-                ) : error ? (
-                    <div className="bg-red-50 border border-red-100 rounded-xl px-5 py-4 text-red-600 text-sm">
-                        {error}
-                    </div>
-                ) : filteredSessions.length === 0 ? (
-                    <EmptyState
-                        title={onlyAnomalies ? "No anomalies found" : "No sessions today"}
-                        description={
-                            onlyAnomalies
-                                ? "All patients are within normal parameters."
-                                : "No sessions are scheduled for today. Add a new session to get started."
-                        }
-                    />
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filteredSessions.map((session) => (
+            {/* Content */}
+            {loading ? (
+                <Spinner />
+            ) : filteredSessions.length === 0 ? (
+                <EmptyState
+                    title={onlyAnomalies ? "No anomalies found" : "No sessions today"}
+                    description={
+                        onlyAnomalies
+                            ? "All patients are within normal parameters. Great work!"
+                            : "No sessions are scheduled for today. Add a new session to get started."
+                    }
+                />
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredSessions.map((session, i) => (
+                        <div
+                            key={session._id}
+                            className="animate-fade-in-up"
+                            style={{ animationDelay: `${(i + 2) * 60}ms` }}
+                        >
                             <PatientCard
-                                key={session._id}
                                 session={session}
                                 onAddSession={handleAddSession}
-                                onEditNotes={handleEditNotes}
+                                onEditNotes={handleEditSession}
                             />
-                        ))}
-                    </div>
-                )}
-            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Session Form Modal */}
             {showForm && (
@@ -167,17 +161,11 @@ export default function Dashboard() {
                     onClose={() => setShowForm(false)}
                 />
             )}
-            {showPatientForm && (
-                <PatientForm
-                    onSuccess={() => { }}
-                    onClose={() => setShowPatientForm(false)}
-                />
-            )}
         </div>
     );
 }
 
-// Stat card helper
+/* ── Stat card helper ── */
 function StatCard({
     label,
     value,

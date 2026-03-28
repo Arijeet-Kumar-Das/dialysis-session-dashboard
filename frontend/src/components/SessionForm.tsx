@@ -1,12 +1,14 @@
 import { useState } from "react";
 import type { Patient, Session } from "../types";
 import { createSession, updateSession } from "../api/sessions";
+import { useToast } from "../context/ToastContext";
+import { detectAnomaliesClient } from "../utils/anomalyDetector";
 
 interface SessionFormProps {
     patients: Patient[];
-    editingSession?: Session | null;   // if set → edit notes mode
-    defaultPatientId?: string;         // pre-select patient
-    onSuccess: () => void;
+    editingSession?: Session | null;
+    defaultPatientId?: string;
+    onSuccess: (wasEditing: boolean) => void;
     onClose: () => void;
 }
 
@@ -18,6 +20,7 @@ export default function SessionForm({
     onClose,
 }: SessionFormProps) {
     const isEditMode = !!editingSession;
+    const { showToast } = useToast();
 
     const [form, setForm] = useState({
         patientId: defaultPatientId ?? editingSession?.patientId._id ?? "",
@@ -40,6 +43,21 @@ export default function SessionForm({
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
+    // ── Live anomaly preview ──
+    const selectedPatient = patients.find((p) => p._id === form.patientId);
+    const dryWeight = isEditMode
+        ? editingSession.patientId.dryWeight
+        : selectedPatient?.dryWeight ?? 0;
+
+    const liveAnomalies = detectAnomaliesClient(
+        {
+            preWeight: form.preWeight ? Number(form.preWeight) : undefined,
+            systolicBP: form.systolicBP ? Number(form.systolicBP) : undefined,
+            durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : undefined,
+        },
+        dryWeight
+    );
+
     const handleSubmit = async () => {
         setError(null);
 
@@ -60,6 +78,7 @@ export default function SessionForm({
                     durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : undefined,
                     machineId: form.machineId || undefined,
                 });
+                showToast("Session updated successfully", "success");
             } else {
                 await createSession({
                     patientId: form.patientId,
@@ -72,25 +91,32 @@ export default function SessionForm({
                     nurseNotes: form.nurseNotes || undefined,
                     status: form.status,
                 });
+                showToast("Session created successfully", "success");
             }
-            onSuccess();
+            onSuccess(isEditMode);
             onClose();
         } catch {
-            setError("Something went wrong. Please try again.");
+            showToast("Failed to save session. Please try again.", "error");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        // Backdrop
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                    <h2 className="font-semibold text-slate-800">
-                        {isEditMode ? "Edit Session" : "Add New Session"}
-                    </h2>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl z-10">
+                    <div>
+                        <h2 className="font-semibold text-slate-800">
+                            {isEditMode ? "Edit Session" : "New Session"}
+                        </h2>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            {isEditMode
+                                ? `Updating session for ${editingSession.patientId.name}`
+                                : "Record a new dialysis session"}
+                        </p>
+                    </div>
                     <button
                         onClick={onClose}
                         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
@@ -101,7 +127,7 @@ export default function SessionForm({
 
                 {/* Body */}
                 <div className="px-6 py-4 space-y-4">
-                    {/* Patient Select — only in create mode */}
+                    {/* Patient Select */}
                     {!isEditMode && (
                         <div>
                             <label className="block text-xs font-medium text-slate-500 mb-1.5">
@@ -123,11 +149,11 @@ export default function SessionForm({
                         </div>
                     )}
 
-                    {/* Scheduled Date — only in create mode */}
+                    {/* Scheduled Date */}
                     {!isEditMode && (
                         <div>
                             <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                                Scheduled Date & Time *
+                                Scheduled Date &amp; Time *
                             </label>
                             <input
                                 type="datetime-local"
@@ -147,8 +173,20 @@ export default function SessionForm({
                         <FormInput label="Duration (min)" name="durationMinutes" value={form.durationMinutes} onChange={handleChange} placeholder="e.g. 240" />
                     </div>
 
-                    {/* Machine ID */}
-                    <FormInput label="Machine ID" name="machineId" value={form.machineId} onChange={handleChange} placeholder="e.g. M-101" />
+                    {/* Machine ID — text input, not number */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                            Machine ID
+                        </label>
+                        <input
+                            type="text"
+                            name="machineId"
+                            value={form.machineId}
+                            onChange={handleChange}
+                            placeholder="e.g. M-101"
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
 
                     {/* Status */}
                     <div>
@@ -182,7 +220,28 @@ export default function SessionForm({
                         />
                     </div>
 
-                    {/* Error */}
+                    {/* ── Live Anomaly Preview ── */}
+                    {liveAnomalies.length > 0 && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 animate-fade-in-up">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd" />
+                                </svg>
+                                <p className="text-amber-700 text-xs font-semibold">
+                                    {liveAnomalies.length} anomal{liveAnomalies.length === 1 ? "y" : "ies"} detected
+                                </p>
+                            </div>
+                            <ul className="space-y-1">
+                                {liveAnomalies.map((a, i) => (
+                                    <li key={i} className="text-amber-600 text-xs pl-6">• {a}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Inline validation error */}
                     {error && (
                         <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg">
                             {error}
@@ -191,7 +250,7 @@ export default function SessionForm({
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
+                <div className="px-6 py-4 border-t border-slate-100 flex gap-3 sticky bottom-0 bg-white rounded-b-2xl">
                     <button
                         onClick={onClose}
                         className="flex-1 py-2 rounded-lg border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 transition-colors"
@@ -211,7 +270,7 @@ export default function SessionForm({
     );
 }
 
-// Small reusable input
+/* ── Reusable number input ── */
 function FormInput({
     label,
     name,
