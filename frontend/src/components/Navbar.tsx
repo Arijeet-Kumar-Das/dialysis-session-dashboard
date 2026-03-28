@@ -97,6 +97,7 @@ export default function Navbar() {
 
             {showPatientForm && (
                 <PatientForm
+                    editingPatient={null}
                     onSuccess={() => {
                         showToast("Patient added successfully", "success");
                     }}

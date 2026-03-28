@@ -17,3 +17,21 @@ export async function createPatient(
     );
     return res.data.data;
 }
+
+export async function updatePatient(
+    id: string,
+    payload: Partial<Omit<Patient, "_id" | "createdAt">>
+): Promise<Patient> {
+    const res = await axios.patch<ApiResponse<Patient>>(
+        `${BASE_URL}/patients/${id}`,
+        payload
+    );
+    return res.data.data;
+}
+
+export async function deletePatient(id: string): Promise<Patient> {
+    const res = await axios.delete<ApiResponse<Patient>>(
+        `${BASE_URL}/patients/${id}`
+    );
+    return res.data.data;
+}

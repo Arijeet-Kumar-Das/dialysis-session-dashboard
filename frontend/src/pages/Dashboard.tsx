@@ -8,8 +8,13 @@ import SessionForm from "../components/SessionForm";
 import Spinner from "../components/ui/Spinner";
 import EmptyState from "../components/ui/EmptyState";
 
+const UNIT_OPTIONS = ["All Units", "Ward-A", "Ward-B", "ICU", "General"];
+
 export default function Dashboard() {
-    const { sessions, loading, error, refresh, lastUpdated } = useSessions();
+    const [selectedUnit, setSelectedUnit] = useState("");
+    const { sessions, loading, error, refresh, lastUpdated } = useSessions(
+        selectedUnit || undefined
+    );
     const { patients } = usePatients();
     const { showToast } = useToast();
 
@@ -83,16 +88,32 @@ export default function Dashboard() {
                     )}
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* Unit Filter */}
+                    <select
+                        value={selectedUnit}
+                        onChange={(e) => setSelectedUnit(e.target.value)}
+                        className="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                    >
+                        {UNIT_OPTIONS.map((u) => (
+                            <option key={u} value={u === "All Units" ? "" : u}>
+                                {u}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Anomaly Filter */}
                     <button
                         onClick={() => setOnlyAnomalies((prev) => !prev)}
-                        className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${onlyAnomalies
+                        className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                            onlyAnomalies
                                 ? "bg-red-50 border-red-200 text-red-600"
                                 : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                            }`}
+                        }`}
                     >
                         <span
-                            className={`w-2 h-2 rounded-full ${onlyAnomalies ? "bg-red-500" : "bg-slate-300"
-                                }`}
+                            className={`w-2 h-2 rounded-full ${
+                                onlyAnomalies ? "bg-red-500" : "bg-slate-300"
+                            }`}
                         />
                         {onlyAnomalies ? "Showing anomalies only" : "Filter: Anomalies only"}
                         {anomalySessions > 0 && (
@@ -145,6 +166,7 @@ export default function Dashboard() {
                                 session={session}
                                 onAddSession={handleAddSession}
                                 onEditNotes={handleEditSession}
+                                onDelete={refresh}
                             />
                         </div>
                     ))}
@@ -179,8 +201,9 @@ function StatCard({
 }) {
     return (
         <div
-            className={`bg-white rounded-xl px-5 py-4 border transition-all ${highlight ? "border-red-100 shadow-red-50 shadow-md" : "border-slate-100"
-                }`}
+            className={`bg-white rounded-xl px-5 py-4 border transition-all ${
+                highlight ? "border-red-100 shadow-red-50 shadow-md" : "border-slate-100"
+            }`}
         >
             <p className="text-slate-400 text-xs mb-1">{label}</p>
             <p className={`font-mono font-bold text-2xl ${color}`}>{value}</p>

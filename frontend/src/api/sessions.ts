@@ -3,10 +3,11 @@ import type { ApiResponse, Session } from "../types";
 
 const BASE_URL = "http://localhost:5000/api";
 
-export async function fetchTodaySessions(): Promise<Session[]> {
-    const res = await axios.get<ApiResponse<Session[]>>(
-        `${BASE_URL}/sessions/today`
-    );
+export async function fetchTodaySessions(unit?: string): Promise<Session[]> {
+    const url = unit
+        ? `${BASE_URL}/sessions/today?unit=${encodeURIComponent(unit)}`
+        : `${BASE_URL}/sessions/today`;
+    const res = await axios.get<ApiResponse<Session[]>>(url);
     return res.data.data;
 }
 
@@ -43,6 +44,13 @@ export async function updateSession(
     const res = await axios.patch<ApiResponse<Session>>(
         `${BASE_URL}/sessions/${id}`,
         payload
+    );
+    return res.data.data;
+}
+
+export async function deleteSession(id: string): Promise<Session> {
+    const res = await axios.delete<ApiResponse<Session>>(
+        `${BASE_URL}/sessions/${id}`
     );
     return res.data.data;
 }

@@ -7,7 +7,8 @@ export async function getTodaySessions(
     next: NextFunction
 ): Promise<void> {
     try {
-        const sessions = await sessionService.getTodaySessions();
+        const unit = req.query.unit as string | undefined;
+        const sessions = await sessionService.getTodaySessions(unit);
         res.status(200).json({ success: true, data: sessions });
     } catch (error) {
         next(error);
@@ -48,6 +49,7 @@ export async function createSession(
             durationMinutes,
             machineId,
             nurseNotes,
+            unit,
             status,
         } = req.body;
 
@@ -68,6 +70,7 @@ export async function createSession(
             durationMinutes,
             machineId,
             nurseNotes,
+            unit,
             status,
         });
 
@@ -91,6 +94,25 @@ export async function updateSession(
         }
 
         res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function deleteSession(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        const deleted = await sessionService.deleteSession(req.params.id as string);
+
+        if (!deleted) {
+            res.status(404).json({ success: false, message: "Session not found" });
+            return;
+        }
+
+        res.status(200).json({ success: true, data: deleted });
     } catch (error) {
         next(error);
     }

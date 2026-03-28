@@ -12,6 +12,7 @@ interface CreateSessionInput {
     durationMinutes?: number;
     machineId?: string;
     nurseNotes?: string;
+    unit?: string;
     status?: "not_started" | "in_progress" | "completed";
 }
 
@@ -25,7 +26,7 @@ interface UpdateSessionInput {
     machineId?: string;
 }
 
-export async function getTodaySessions(): Promise<ISession[]> {
+export async function getTodaySessions(unit?: string): Promise<ISession[]> {
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -33,9 +34,15 @@ export async function getTodaySessions(): Promise<ISession[]> {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    return Session.find({
+    const query: any = {
         scheduledDate: { $gte: startOfDay, $lte: endOfDay },
-    })
+    };
+
+    if (unit) {
+        query.unit = unit;
+    }
+
+    return Session.find(query)
         .populate("patientId", "name age gender dryWeight")
         .sort({ scheduledDate: 1 });
 }
@@ -102,4 +109,8 @@ export async function updateSession(
 
 export async function getSessionById(id: string): Promise<ISession | null> {
     return Session.findById(id).populate("patientId", "name age gender dryWeight");
+}
+
+export async function deleteSession(id: string): Promise<ISession | null> {
+    return Session.findByIdAndDelete(id);
 }

@@ -12,6 +12,7 @@ export interface ISession extends Document {
     durationMinutes?: number;
     machineId?: string;
     nurseNotes?: string;
+    unit?: string;
     anomalies: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -39,9 +40,13 @@ const SessionSchema = new Schema<ISession>(
         durationMinutes: { type: Number, min: 0 },
         machineId: { type: String, trim: true },
         nurseNotes: { type: String, trim: true },
+        unit: { type: String, trim: true, default: "General" },
         anomalies: { type: [String], default: [] },
     },
     { timestamps: true }
 );
+
+SessionSchema.index({ scheduledDate: 1 });
+SessionSchema.index({ patientId: 1 });
 
 export default mongoose.model<ISession>("Session", SessionSchema);

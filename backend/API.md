@@ -91,10 +91,44 @@ Registers a new patient.
 
 ---
 
+### `PATCH /api/patients/:id`
+Updates an existing patient.
+
+**Request Body** — all fields optional
+| Field | Type | Description |
+|-------|------|-------------|
+| name | string | Full name |
+| age | number | Age in years |
+| gender | string | male / female / other |
+| dryWeight | number | Baseline weight in kg |
+| contactNumber | string | Phone number |
+
+**Response**
+```json
+{ "success": true, "data": { ...updated patient } }
+```
+
+---
+
+### `DELETE /api/patients/:id`
+Deletes a patient and all their associated sessions.
+
+**Response**
+```json
+{ "success": true, "data": { ...deleted patient } }
+```
+
+---
+
 ## Sessions
 
 ### `GET /api/sessions/today`
 Returns all sessions scheduled for today with anomalies populated.
+
+**Query Parameters**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| unit | string | ❌ | Filter by unit (e.g. Ward-A, Ward-B, ICU) |
 
 **Response**
 ```json
@@ -157,6 +191,7 @@ Records a new dialysis session. Anomaly detection runs automatically on creation
 | durationMinutes | number | ❌ | Session duration in minutes |
 | machineId | string | ❌ | Dialysis machine identifier |
 | nurseNotes | string | ❌ | Free-text notes |
+| unit | string | ❌ | Hospital unit (default: "General") |
 
 **Example**
 ```json
@@ -195,6 +230,16 @@ Updates an existing session. Anomaly detection re-runs on every update.
 **Response**
 ```json
 { "success": true, "data": { ...updated session } }
+```
+
+---
+
+### `DELETE /api/sessions/:id`
+Deletes a session by ID.
+
+**Response**
+```json
+{ "success": true, "data": { ...deleted session } }
 ```
 
 ---

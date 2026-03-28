@@ -1,20 +1,42 @@
+import { useState } from "react";
 import type { Session } from "../types";
 import StatusBadge from "./ui/Badge";
 import AnomalyBadge from "./AnomalyBadge";
+import { deleteSession } from "../api/sessions";
+import { useToast } from "../context/ToastContext";
 
 interface PatientCardProps {
     session: Session;
     onAddSession: (patientId: string) => void;
     onEditNotes: (session: Session) => void;
+    onDelete?: () => void;
 }
 
 export default function PatientCard({
     session,
     onAddSession,
     onEditNotes,
+    onDelete,
 }: PatientCardProps) {
     const patient = session.patientId;
     const hasAnomalies = session.anomalies.length > 0;
+    const { showToast } = useToast();
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        try {
+            await deleteSession(session._id);
+            showToast("Session deleted successfully", "success");
+            onDelete?.();
+        } catch {
+            showToast("Failed to delete session", "error");
+        } finally {
+            setDeleting(false);
+            setConfirmDelete(false);
+        }
+    };
 
     return (
         <div
@@ -62,6 +84,12 @@ export default function PatientCard({
                         <span className="font-mono text-slate-600">{session.machineId}</span>
                     </span>
                 )}
+                {session.unit && (
+                    <span>
+                        Unit:{" "}
+                        <span className="font-medium text-slate-600">{session.unit}</span>
+                    </span>
+                )}
                 {session.nurseNotes && (
                     <span className="truncate max-w-xs italic">"{session.nurseNotes}"</span>
                 )}
@@ -76,6 +104,28 @@ export default function PatientCard({
                 </div>
             )}
 
+            {/* Delete Confirmation */}
+            {confirmDelete && (
+                <div className="mx-5 mb-3 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5 flex items-center justify-between">
+                    <p className="text-red-600 text-xs">Delete this session?</p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setConfirmDelete(false)}
+                            className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            disabled={deleting}
+                            className="text-xs text-red-600 font-medium hover:bg-red-100 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                        >
+                            {deleting ? "Deleting..." : "Confirm"}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Actions */}
             <div className="px-5 pb-4 pt-1 flex items-center gap-2 border-t border-slate-50">
                 <button
@@ -83,6 +133,12 @@ export default function PatientCard({
                     className="flex-1 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 py-2 rounded-lg transition-colors"
                 >
                     Edit Session
+                </button>
+                <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="text-xs font-medium text-red-400 hover:text-red-600 hover:bg-red-50 py-2 px-3 rounded-lg transition-colors"
+                >
+                    Delete
                 </button>
                 <button
                     onClick={() => onAddSession(patient._id)}

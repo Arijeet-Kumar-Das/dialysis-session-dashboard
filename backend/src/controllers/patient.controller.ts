@@ -63,3 +63,57 @@ export async function createPatient(
         next(error);
     }
 }
+
+export async function updatePatient(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        const { name, age, gender, dryWeight, contactNumber } = req.body;
+
+        if (!name && !age && !gender && !dryWeight && contactNumber === undefined) {
+            res.status(400).json({
+                success: false,
+                message: "At least one field is required to update",
+            });
+            return;
+        }
+
+        const updated = await patientService.updatePatient(req.params.id as string, {
+            name,
+            age,
+            gender,
+            dryWeight,
+            contactNumber,
+        });
+
+        if (!updated) {
+            res.status(404).json({ success: false, message: "Patient not found" });
+            return;
+        }
+
+        res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function deletePatient(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        const deleted = await patientService.deletePatient(req.params.id as string);
+
+        if (!deleted) {
+            res.status(404).json({ success: false, message: "Patient not found" });
+            return;
+        }
+
+        res.status(200).json({ success: true, data: deleted });
+    } catch (error) {
+        next(error);
+    }
+}

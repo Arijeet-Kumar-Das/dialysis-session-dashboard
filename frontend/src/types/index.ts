@@ -21,6 +21,7 @@ export interface Session {
     durationMinutes?: number;
     machineId?: string;
     nurseNotes?: string;
+    unit?: string;
     anomalies: string[];
     createdAt: string;
     updatedAt: string;

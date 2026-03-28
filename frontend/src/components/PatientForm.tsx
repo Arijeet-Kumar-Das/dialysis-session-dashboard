@@ -1,20 +1,23 @@
 import { useState } from "react";
-import { createPatient } from "../api/patients";
+import type { Patient } from "../types";
+import { createPatient, updatePatient } from "../api/patients";
 import { useToast } from "../context/ToastContext";
 
 interface PatientFormProps {
+    editingPatient?: Patient | null;
     onSuccess: () => void;
     onClose: () => void;
 }
 
-export default function PatientForm({ onSuccess, onClose }: PatientFormProps) {
+export default function PatientForm({ editingPatient, onSuccess, onClose }: PatientFormProps) {
+    const isEditMode = !!editingPatient;
     const { showToast } = useToast();
     const [form, setForm] = useState({
-        name: "",
-        age: "",
-        gender: "male",
-        dryWeight: "",
-        contactNumber: "",
+        name: editingPatient?.name ?? "",
+        age: editingPatient?.age?.toString() ?? "",
+        gender: editingPatient?.gender ?? "male",
+        dryWeight: editingPatient?.dryWeight?.toString() ?? "",
+        contactNumber: editingPatient?.contactNumber ?? "",
     });
 
     const [loading, setLoading] = useState(false);
@@ -36,17 +39,30 @@ export default function PatientForm({ onSuccess, onClose }: PatientFormProps) {
 
         setLoading(true);
         try {
-            await createPatient({
+            const payload = {
                 name: form.name,
                 age: Number(form.age),
                 gender: form.gender as "male" | "female" | "other",
                 dryWeight: Number(form.dryWeight),
                 contactNumber: form.contactNumber || undefined,
-            });
+            };
+
+            if (isEditMode) {
+                await updatePatient(editingPatient._id, payload);
+                showToast("Patient updated successfully", "success");
+            } else {
+                await createPatient(payload);
+                showToast("Patient added successfully", "success");
+            }
             onSuccess();
             onClose();
         } catch {
-            showToast("Failed to create patient. Please try again.", "error");
+            showToast(
+                isEditMode
+                    ? "Failed to update patient. Please try again."
+                    : "Failed to create patient. Please try again.",
+                "error"
+            );
         } finally {
             setLoading(false);
         }
@@ -58,9 +74,13 @@ export default function PatientForm({ onSuccess, onClose }: PatientFormProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                     <div>
-                        <h2 className="font-semibold text-slate-800">Add New Patient</h2>
+                        <h2 className="font-semibold text-slate-800">
+                            {isEditMode ? "Edit Patient" : "Add New Patient"}
+                        </h2>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            Register a new patient to the system
+                            {isEditMode
+                                ? `Updating ${editingPatient.name}`
+                                : "Register a new patient to the system"}
                         </p>
                     </div>
                     <button
@@ -175,7 +195,7 @@ export default function PatientForm({ onSuccess, onClose }: PatientFormProps) {
                         disabled={loading}
                         className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
-                        {loading ? "Saving..." : "Add Patient"}
+                        {loading ? "Saving..." : isEditMode ? "Save Changes" : "Add Patient"}
                     </button>
                 </div>
             </div>

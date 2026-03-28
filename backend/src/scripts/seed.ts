@@ -36,31 +36,30 @@ async function seed() {
         console.log(`✓ Patient: ${patient.name} (dry weight: ${patient.dryWeight}kg)`);
     }
 
-    // Each config: [patientIndex, hour, status, preWeightDelta, postWeightDelta, bp, duration, machine, notes]
+
     const configs = [
-        // Rajesh — session 1: weight gain anomaly (4.2kg above dry weight)
-        { pi: 0, hr: 8, st: "completed", pre: 4.2, post: 0.5, bp: 145, dur: 240, m: "M-101", n: "Excess fluid at intake. Removed successfully during session." },
-        // Rajesh — session 2: in progress, normal
-        { pi: 0, hr: 14, st: "in_progress", pre: 1.5, post: null, bp: 155, dur: null, m: "M-103", n: "Second session today. Monitoring vitals closely." },
 
-        // Priya — session 1: high BP anomaly (192 > 180)
-        { pi: 1, hr: 9, st: "completed", pre: 2.1, post: 0.3, bp: 192, dur: 210, m: "M-102", n: "BP elevated throughout session. Cardiologist consulted." },
-        // Priya — session 2: not started
-        { pi: 1, hr: 15, st: "not_started", pre: null, post: null, bp: null, dur: null, m: "M-105", n: "" },
-        // Priya — session 3: not started
-        { pi: 1, hr: 18, st: "not_started", pre: null, post: null, bp: null, dur: null, m: null, n: "" },
+        { pi: 0, hr: 8, st: "completed", pre: 4.2, post: 0.5, bp: 145, dur: 240, m: "M-101", u: "Ward-A", n: "Excess fluid at intake. Removed successfully during session." },
 
-        // Mohammed — session 1: short duration (90 < 120) + weight gain (3.8 > 3)
-        { pi: 2, hr: 7, st: "completed", pre: 3.8, post: 1.2, bp: 165, dur: 90, m: "M-104", n: "Session ended early — patient discomfort. Weight gain concerning." },
-        // Mohammed — session 2: in progress, normal
-        { pi: 2, hr: 13, st: "in_progress", pre: 2.5, post: null, bp: 170, dur: null, m: "M-101", n: "Resuming treatment. Patient more comfortable." },
+        { pi: 0, hr: 14, st: "in_progress", pre: 1.5, post: null, bp: 155, dur: null, m: "M-103", u: "Ward-A", n: "Second session today. Monitoring vitals closely." },
 
-        // Anita — session 1: fully normal
-        { pi: 3, hr: 10, st: "completed", pre: 1.8, post: 0.2, bp: 130, dur: 240, m: "M-106", n: "Routine session. No concerns." },
-        // Anita — session 2: in progress, normal
-        { pi: 3, hr: 16, st: "in_progress", pre: 2.0, post: null, bp: 138, dur: null, m: "M-102", n: "All vitals within normal range." },
-        // Anita — session 3: not started
-        { pi: 3, hr: 19, st: "not_started", pre: null, post: null, bp: null, dur: null, m: "M-107", n: "" },
+
+        { pi: 1, hr: 9, st: "completed", pre: 2.1, post: 0.3, bp: 192, dur: 210, m: "M-102", u: "Ward-B", n: "BP elevated throughout session. Cardiologist consulted." },
+
+        { pi: 1, hr: 15, st: "not_started", pre: null, post: null, bp: null, dur: null, m: "M-105", u: "Ward-B", n: "" },
+
+        { pi: 1, hr: 18, st: "not_started", pre: null, post: null, bp: null, dur: null, m: null, u: "Ward-B", n: "" },
+
+        { pi: 2, hr: 7, st: "completed", pre: 3.8, post: 1.2, bp: 165, dur: 90, m: "M-104", u: "ICU", n: "Session ended early — patient discomfort. Weight gain concerning." },
+
+        { pi: 2, hr: 13, st: "in_progress", pre: 2.5, post: null, bp: 170, dur: null, m: "M-101", u: "ICU", n: "Resuming treatment. Patient more comfortable." },
+
+
+        { pi: 3, hr: 10, st: "completed", pre: 1.8, post: 0.2, bp: 130, dur: 240, m: "M-106", u: "Ward-A", n: "Routine session. No concerns." },
+
+        { pi: 3, hr: 16, st: "in_progress", pre: 2.0, post: null, bp: 138, dur: null, m: "M-102", u: "Ward-B", n: "All vitals within normal range." },
+
+        { pi: 3, hr: 19, st: "not_started", pre: null, post: null, bp: null, dur: null, m: "M-107", u: "ICU", n: "" },
     ];
 
     for (const c of configs) {
@@ -85,6 +84,7 @@ async function seed() {
             systolicBP,
             durationMinutes,
             machineId: c.m ?? undefined,
+            unit: c.u,
             nurseNotes: c.n || undefined,
             anomalies,
         }).save();
