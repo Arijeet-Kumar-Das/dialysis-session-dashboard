@@ -1,9 +1,13 @@
 import request from "supertest";
 import mongoose from "mongoose";
 
-import app from "../src/index";
+import app from "../src/app";
 
-
+beforeAll(async () => {
+    const uri = process.env.MONGODB_URI;
+    if (!uri) throw new Error("MONGODB_URI not set — did setup.js run?");
+    await mongoose.connect(uri);
+});
 
 afterAll(async () => {
     await mongoose.connection.collection("sessions").deleteMany({});

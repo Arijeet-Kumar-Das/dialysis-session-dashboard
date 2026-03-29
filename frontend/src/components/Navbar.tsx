@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import PatientForm from "./PatientForm";
 import { socket } from "../socket";
 
+// Determine if socket is enabled (only on localhost / local dev)
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL
+    ?? import.meta.env.VITE_API_URL
+    ?? "http://localhost:5000";
+const isSocketEnabled = SOCKET_URL.includes("localhost") || SOCKET_URL.includes("127.0.0.1");
+
 export default function Navbar() {
     const location = useLocation();
     const [showPatientForm, setShowPatientForm] = useState(false);
@@ -11,6 +17,8 @@ export default function Navbar() {
     );
 
     useEffect(() => {
+        if (!isSocketEnabled) return; // No socket listeners on production
+
         function onConnect() {
             setSocketStatus("connected");
         }
@@ -86,11 +94,13 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* Socket Status Pill */}
-                    <div className="hidden sm:flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-full">
-                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                        <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
-                    </div>
+                    {/* Socket Status Pill — only show when socket is enabled (local dev) */}
+                    {isSocketEnabled && (
+                        <div className="hidden sm:flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-full">
+                            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                            <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
+                        </div>
+                    )}
 
                     <span className="hidden md:inline text-slate-400 text-xs">
                         {new Date().toLocaleDateString("en-US", {
@@ -132,10 +142,12 @@ export default function Navbar() {
                     Patients
                 </Link>
                 {/* Mobile socket indicator */}
-                <div className="flex items-center gap-1 px-2">
-                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                    <span className={`text-[10px] ${status.color}`}>{status.text}</span>
-                </div>
+                {isSocketEnabled && (
+                    <div className="flex items-center gap-1 px-2">
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                        <span className={`text-[10px] ${status.color}`}>{status.text}</span>
+                    </div>
+                )}
             </div>
 
             {showPatientForm && (
