@@ -2,6 +2,7 @@ import Session, { ISession } from "../models/Session";
 import Patient from "../models/Patient";
 import { detectAnomalies } from "./anomaly.service";
 import anomalyThresholds from "../config/anomalyThresholds";
+import { getIO } from "../socket";
 
 interface CreateSessionInput {
     patientId: string;
@@ -32,7 +33,7 @@ export async function getTodaySessions(date?: string, unit?: string): Promise<IS
     let endOfDay: Date;
 
     if (date) {
-        // Parse YYYY-MM-DD and build range in local server time
+
         startOfDay = new Date(date + "T00:00:00");
         endOfDay = new Date(date + "T23:59:59.999");
     } else {
@@ -58,7 +59,7 @@ export async function getTodaySessions(date?: string, unit?: string): Promise<IS
 export async function createSession(
     input: CreateSessionInput
 ): Promise<ISession> {
-    // Validate patient exists
+
     const patient = await Patient.findById(input.patientId);
     if (!patient) {
         throw new Error("Patient not found");
@@ -81,7 +82,10 @@ export async function createSession(
         anomalies,
     });
 
-    return session.save();
+    const saved = await session.save();
+    const populated = await saved.populate("patientId", "name age gender dryWeight");
+    getIO()?.emit("session:created", populated);
+    return populated;
 }
 
 export async function updateSession(
@@ -108,11 +112,13 @@ export async function updateSession(
         anomalyThresholds
     );
 
-    return Session.findByIdAndUpdate(
+    const updated = await Session.findByIdAndUpdate(
         id,
         { ...input, anomalies },
         { new: true, runValidators: true }
     ).populate("patientId", "name age gender dryWeight");
+    if (updated) getIO()?.emit("session:updated", updated);
+    return updated;
 }
 
 export async function getSessionById(id: string): Promise<ISession | null> {
@@ -120,5 +126,7 @@ export async function getSessionById(id: string): Promise<ISession | null> {
 }
 
 export async function deleteSession(id: string): Promise<ISession | null> {
-    return Session.findByIdAndDelete(id);
+    const deleted = await Session.findByIdAndDelete(id);
+    if (deleted) getIO()?.emit("session:deleted", { id });
+    return deleted;
 }

@@ -1,7 +1,3 @@
-/**
- * Client-side anomaly detection — mirrors backend thresholds exactly.
- * Used for live preview in the SessionForm while nurse fills in vitals.
- */
 
 const THRESHOLDS = {
     maxWeightGainKg: 3,

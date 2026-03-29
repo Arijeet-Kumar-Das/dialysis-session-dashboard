@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { ApiResponse, Patient } from "../types/index.ts";
 
-const BASE_URL = "https://dialysis-session-dashboard.vercel.app/api";
+const BASE_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 export async function fetchAllPatients(): Promise<Patient[]> {
     const res = await axios.get<ApiResponse<Patient[]>>(`${BASE_URL}/patients`);

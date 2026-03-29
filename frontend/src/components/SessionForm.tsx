@@ -3,6 +3,14 @@ import type { Patient, Session } from "../types";
 import { createSession, updateSession } from "../api/sessions";
 import { useToast } from "../context/ToastContext";
 import { detectAnomaliesClient } from "../utils/anomalyDetector";
+import {
+    validateWeight,
+    validatePostWeight,
+    validateBP,
+    validateDuration,
+    validateMachineId,
+    validateNurseNotes,
+} from "../utils/validators";
 
 interface SessionFormProps {
     patients: Patient[];
@@ -10,6 +18,14 @@ interface SessionFormProps {
     defaultPatientId?: string;
     onSuccess: (wasEditing: boolean) => void;
     onClose: () => void;
+}
+
+type FieldErrors = Record<string, string | null>;
+
+function borderClass(value: string, error: string | null | undefined, touched: boolean): string {
+    if (error) return "border-red-400";
+    if (touched && value.trim()) return "border-emerald-400";
+    return "border-slate-200";
 }
 
 export default function SessionForm({
@@ -36,12 +52,76 @@ export default function SessionForm({
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
-        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+        // Clear/revalidate on change
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+        }
+        // Re-check postWeight when preWeight changes
+        if (name === "preWeight" && fieldErrors.postWeight) {
+            setFieldErrors((prev) => ({
+                ...prev,
+                postWeight: validatePostWeight(form.postWeight, value),
+            }));
+        }
     };
+
+    const validateField = (name: string, value: string): string | null => {
+        switch (name) {
+            case "patientId":
+                return !isEditMode && !value ? "Please select a patient" : null;
+            case "scheduledDate":
+                return !isEditMode && !value ? "Scheduled date is required" : null;
+            case "preWeight":
+                return validateWeight(value, "Pre weight");
+            case "postWeight":
+                return validatePostWeight(value, form.preWeight);
+            case "systolicBP":
+                return validateBP(value);
+            case "durationMinutes":
+                return validateDuration(value);
+            case "machineId":
+                return validateMachineId(value);
+            case "nurseNotes":
+                return validateNurseNotes(value);
+            default:
+                return null;
+        }
+    };
+
+    const handleBlur = (name: string) => {
+        setTouched((prev) => ({ ...prev, [name]: true }));
+        setFieldErrors((prev) => ({
+            ...prev,
+            [name]: validateField(name, form[name as keyof typeof form]),
+        }));
+    };
+
+    const validateAll = (): boolean => {
+        const errors: FieldErrors = {};
+        const fieldsToValidate = isEditMode
+            ? ["preWeight", "postWeight", "systolicBP", "durationMinutes", "machineId", "nurseNotes"]
+            : ["patientId", "scheduledDate", "preWeight", "postWeight", "systolicBP", "durationMinutes", "machineId", "nurseNotes"];
+
+        const allTouched: Record<string, boolean> = {};
+        fieldsToValidate.forEach((f) => {
+            errors[f] = validateField(f, form[f as keyof typeof form]);
+            allTouched[f] = true;
+        });
+
+        setFieldErrors(errors);
+        setTouched((prev) => ({ ...prev, ...allTouched }));
+        return !Object.values(errors).some(Boolean);
+    };
+
+    const hasErrors = Object.values(fieldErrors).some(Boolean);
 
     // ── Live anomaly preview ──
     const selectedPatient = patients.find((p) => p._id === form.patientId);
@@ -60,11 +140,7 @@ export default function SessionForm({
 
     const handleSubmit = async () => {
         setError(null);
-
-        if (!isEditMode && !form.patientId) {
-            setError("Please select a patient");
-            return;
-        }
+        if (!validateAll()) return;
 
         setLoading(true);
         try {
@@ -137,7 +213,8 @@ export default function SessionForm({
                                 name="patientId"
                                 value={form.patientId}
                                 onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onBlur={() => handleBlur("patientId")}
+                                className={`w-full border ${borderClass(form.patientId, fieldErrors.patientId, !!touched.patientId)} rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
                             >
                                 <option value="">Select patient...</option>
                                 {patients.map((p) => (
@@ -146,6 +223,7 @@ export default function SessionForm({
                                     </option>
                                 ))}
                             </select>
+                            {fieldErrors.patientId && <p className="text-red-500 text-xs mt-1">{fieldErrors.patientId}</p>}
                         </div>
                     )}
 
@@ -160,20 +238,58 @@ export default function SessionForm({
                                 name="scheduledDate"
                                 value={form.scheduledDate}
                                 onChange={handleChange}
-                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onBlur={() => handleBlur("scheduledDate")}
+                                className={`w-full border ${borderClass(form.scheduledDate, fieldErrors.scheduledDate, !!touched.scheduledDate)} rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
                             />
+                            {fieldErrors.scheduledDate && <p className="text-red-500 text-xs mt-1">{fieldErrors.scheduledDate}</p>}
                         </div>
                     )}
 
                     {/* Vitals Grid */}
                     <div className="grid grid-cols-2 gap-3">
-                        <FormInput label="Pre Weight (kg)" name="preWeight" value={form.preWeight} onChange={handleChange} placeholder="e.g. 74.5" />
-                        <FormInput label="Post Weight (kg)" name="postWeight" value={form.postWeight} onChange={handleChange} placeholder="e.g. 71.0" />
-                        <FormInput label="Systolic BP (mmHg)" name="systolicBP" value={form.systolicBP} onChange={handleChange} placeholder="e.g. 140" />
-                        <FormInput label="Duration (min)" name="durationMinutes" value={form.durationMinutes} onChange={handleChange} placeholder="e.g. 240" />
+                        <ValidatedInput
+                            label="Pre Weight (kg)"
+                            name="preWeight"
+                            value={form.preWeight}
+                            error={fieldErrors.preWeight}
+                            touched={!!touched.preWeight}
+                            onChange={handleChange}
+                            onBlur={() => handleBlur("preWeight")}
+                            placeholder="e.g. 74.5"
+                        />
+                        <ValidatedInput
+                            label="Post Weight (kg)"
+                            name="postWeight"
+                            value={form.postWeight}
+                            error={fieldErrors.postWeight}
+                            touched={!!touched.postWeight}
+                            onChange={handleChange}
+                            onBlur={() => handleBlur("postWeight")}
+                            placeholder="e.g. 71.0"
+                        />
+                        <ValidatedInput
+                            label="Systolic BP (mmHg)"
+                            name="systolicBP"
+                            value={form.systolicBP}
+                            error={fieldErrors.systolicBP}
+                            touched={!!touched.systolicBP}
+                            onChange={handleChange}
+                            onBlur={() => handleBlur("systolicBP")}
+                            placeholder="e.g. 140"
+                        />
+                        <ValidatedInput
+                            label="Duration (min)"
+                            name="durationMinutes"
+                            value={form.durationMinutes}
+                            error={fieldErrors.durationMinutes}
+                            touched={!!touched.durationMinutes}
+                            onChange={handleChange}
+                            onBlur={() => handleBlur("durationMinutes")}
+                            placeholder="e.g. 240"
+                        />
                     </div>
 
-                    {/* Machine ID — text input, not number */}
+                    {/* Machine ID */}
                     <div>
                         <label className="block text-xs font-medium text-slate-500 mb-1.5">
                             Machine ID
@@ -183,9 +299,12 @@ export default function SessionForm({
                             name="machineId"
                             value={form.machineId}
                             onChange={handleChange}
+                            onBlur={() => handleBlur("machineId")}
                             placeholder="e.g. M-101"
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            maxLength={20}
+                            className={`w-full border ${borderClass(form.machineId, fieldErrors.machineId, !!touched.machineId)} rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
                         />
+                        {fieldErrors.machineId && <p className="text-red-500 text-xs mt-1">{fieldErrors.machineId}</p>}
                     </div>
 
                     {/* Status */}
@@ -207,17 +326,24 @@ export default function SessionForm({
 
                     {/* Nurse Notes */}
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                            Nurse Notes
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-medium text-slate-500">
+                                Nurse Notes
+                            </label>
+                            <span className={`text-xs font-mono ${form.nurseNotes.length > 500 ? "text-red-500" : "text-slate-400"}`}>
+                                {form.nurseNotes.length}/500
+                            </span>
+                        </div>
                         <textarea
                             name="nurseNotes"
                             value={form.nurseNotes}
                             onChange={handleChange}
+                            onBlur={() => handleBlur("nurseNotes")}
                             rows={3}
                             placeholder="Any observations or notes..."
-                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            className={`w-full border ${borderClass(form.nurseNotes, fieldErrors.nurseNotes, !!touched.nurseNotes)} rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-colors`}
                         />
+                        {fieldErrors.nurseNotes && <p className="text-red-500 text-xs mt-1">{fieldErrors.nurseNotes}</p>}
                     </div>
 
                     {/* ── Live Anomaly Preview ── */}
@@ -259,7 +385,7 @@ export default function SessionForm({
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={loading}
+                        disabled={loading || hasErrors}
                         className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
                         {loading ? "Saving..." : isEditMode ? "Save Changes" : "Create Session"}
@@ -270,18 +396,24 @@ export default function SessionForm({
     );
 }
 
-/* ── Reusable number input ── */
-function FormInput({
+/* ── Reusable validated number input ── */
+function ValidatedInput({
     label,
     name,
     value,
+    error,
+    touched,
     onChange,
+    onBlur,
     placeholder,
 }: {
     label: string;
     name: string;
     value: string;
+    error: string | null | undefined;
+    touched: boolean;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onBlur: () => void;
     placeholder?: string;
 }) {
     return (
@@ -294,9 +426,11 @@ function FormInput({
                 name={name}
                 value={value}
                 onChange={onChange}
+                onBlur={onBlur}
                 placeholder={placeholder}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full border ${borderClass(value, error, touched)} rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
             />
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
     );
 }

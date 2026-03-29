@@ -19,7 +19,7 @@ app.get("/health", (req, res) => {
     res.status(200).json({ success: true, message: "Server is running" });
 });
 
-// --- Global error handler (must be last) ---
+// --- Global error handler ---
 app.use(errorHandler);
 
 export default app;

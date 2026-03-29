@@ -1,10 +1,44 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PatientForm from "./PatientForm";
+import { socket } from "../socket";
 
 export default function Navbar() {
     const location = useLocation();
     const [showPatientForm, setShowPatientForm] = useState(false);
+    const [socketStatus, setSocketStatus] = useState<"connected" | "disconnected" | "reconnecting">(
+        socket.connected ? "connected" : "disconnected"
+    );
+
+    useEffect(() => {
+        function onConnect() {
+            setSocketStatus("connected");
+        }
+        function onDisconnect() {
+            setSocketStatus("disconnected");
+        }
+        function onReconnectAttempt() {
+            setSocketStatus("reconnecting");
+        }
+
+        socket.on("connect", onConnect);
+        socket.on("disconnect", onDisconnect);
+        socket.io.on("reconnect_attempt", onReconnectAttempt);
+
+        return () => {
+            socket.off("connect", onConnect);
+            socket.off("disconnect", onDisconnect);
+            socket.io.off("reconnect_attempt", onReconnectAttempt);
+        };
+    }, []);
+
+    const statusConfig = {
+        connected: { dot: "bg-emerald-400 animate-live-dot", text: "Live", color: "text-emerald-400" },
+        disconnected: { dot: "bg-slate-500", text: "Offline", color: "text-slate-400" },
+        reconnecting: { dot: "bg-amber-400 animate-pulse", text: "Reconnecting", color: "text-amber-400" },
+    };
+
+    const status = statusConfig[socketStatus];
 
     return (
         <>
@@ -52,6 +86,12 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Socket Status Pill */}
+                    <div className="hidden sm:flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-full">
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                        <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
+                    </div>
+
                     <span className="hidden md:inline text-slate-400 text-xs">
                         {new Date().toLocaleDateString("en-US", {
                             weekday: "long",
@@ -91,6 +131,11 @@ export default function Navbar() {
                 >
                     Patients
                 </Link>
+                {/* Mobile socket indicator */}
+                <div className="flex items-center gap-1 px-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                    <span className={`text-[10px] ${status.color}`}>{status.text}</span>
+                </div>
             </div>
 
             {showPatientForm && (

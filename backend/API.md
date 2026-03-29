@@ -89,6 +89,8 @@ Registers a new patient.
 { "success": true, "data": { ...patient } }
 ```
 
+**Socket Event**: `patient:created` emitted with patient object.
+
 ---
 
 ### `PATCH /api/patients/:id`
@@ -108,6 +110,8 @@ Updates an existing patient.
 { "success": true, "data": { ...updated patient } }
 ```
 
+**Socket Event**: `patient:updated` emitted with updated patient object.
+
 ---
 
 ### `DELETE /api/patients/:id`
@@ -118,17 +122,28 @@ Deletes a patient and all their associated sessions.
 { "success": true, "data": { ...deleted patient } }
 ```
 
+**Socket Event**: `patient:deleted` emitted with `{ id }`.
+
 ---
 
 ## Sessions
 
 ### `GET /api/sessions/today`
-Returns all sessions scheduled for today with anomalies populated.
+Returns sessions for a given date (defaults to today) with anomalies populated.
 
 **Query Parameters**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| unit | string | ❌ | Filter by unit (e.g. Ward-A, Ward-B, ICU) |
+| date | string | ❌ | Date in `YYYY-MM-DD` format (defaults to today) |
+| unit | string | ❌ | Filter by unit (e.g. Ward-A, Ward-B, ICU, General) |
+
+**Examples**
+```
+GET /api/sessions/today                          → all sessions today
+GET /api/sessions/today?date=2026-03-28          → sessions on March 28
+GET /api/sessions/today?unit=Ward-A              → Ward-A sessions today
+GET /api/sessions/today?date=2026-03-28&unit=ICU → ICU sessions on March 28
+```
 
 **Response**
 ```json
@@ -151,6 +166,7 @@ Returns all sessions scheduled for today with anomalies populated.
       "systolicBP": 185,
       "durationMinutes": 90,
       "machineId": "M-101",
+      "unit": "Ward-A",
       "nurseNotes": "",
       "anomalies": [
         "Excess weight gain: 5.0kg above dry weight (limit: 3kg)",
@@ -190,7 +206,7 @@ Records a new dialysis session. Anomaly detection runs automatically on creation
 | systolicBP | number | ❌ | Systolic blood pressure in mmHg |
 | durationMinutes | number | ❌ | Session duration in minutes |
 | machineId | string | ❌ | Dialysis machine identifier |
-| nurseNotes | string | ❌ | Free-text notes |
+| nurseNotes | string | ❌ | Free-text notes (max 500 characters) |
 | unit | string | ❌ | Hospital unit (default: "General") |
 
 **Example**
@@ -202,6 +218,7 @@ Records a new dialysis session. Anomaly detection runs automatically on creation
   "systolicBP": 185,
   "durationMinutes": 90,
   "machineId": "M-101",
+  "unit": "Ward-A",
   "status": "in_progress"
 }
 ```
@@ -210,6 +227,8 @@ Records a new dialysis session. Anomaly detection runs automatically on creation
 ```json
 { "success": true, "data": { ...session with anomalies } }
 ```
+
+**Socket Event**: `session:created` emitted with populated session object.
 
 ---
 
@@ -232,6 +251,8 @@ Updates an existing session. Anomaly detection re-runs on every update.
 { "success": true, "data": { ...updated session } }
 ```
 
+**Socket Event**: `session:updated` emitted with populated session object.
+
 ---
 
 ### `DELETE /api/sessions/:id`
@@ -241,6 +262,33 @@ Deletes a session by ID.
 ```json
 { "success": true, "data": { ...deleted session } }
 ```
+
+**Socket Event**: `session:deleted` emitted with `{ id }`.
+
+---
+
+## Socket.io Events
+
+The backend emits real-time events via Socket.io when data changes.
+Connect to: `http://localhost:5000`
+
+### Session Events
+| Event | Payload | Trigger |
+|-------|---------|---------|
+| `session:created` | Populated session object | New session created |
+| `session:updated` | Populated session object | Session updated |
+| `session:deleted` | `{ id: string }` | Session deleted |
+
+### Patient Events
+| Event | Payload | Trigger |
+|-------|---------|---------|
+| `patient:created` | Patient object | New patient registered |
+| `patient:updated` | Patient object | Patient updated |
+| `patient:deleted` | `{ id: string }` | Patient deleted |
+
+> **Note**: Socket.io events are only available in local development.
+> Vercel serverless deployments do not support WebSockets — the API
+> remains fully functional via REST, but real-time push is disabled.
 
 ---
 

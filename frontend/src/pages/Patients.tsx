@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import type { Patient } from "../types";
 import { usePatients } from "../hooks/usePatients";
 import { useToast } from "../context/ToastContext";
+import { useSocket } from "../hooks/useSocket";
 import { deletePatient } from "../api/patients";
 import PatientForm from "../components/PatientForm";
 import SessionForm from "../components/SessionForm";
@@ -11,6 +12,9 @@ import EmptyState from "../components/ui/EmptyState";
 export default function Patients() {
     const { patients, loading, error, refresh } = usePatients();
     const { showToast } = useToast();
+
+    // Real-time socket
+    useSocket(null, refresh);
 
     const [showPatientForm, setShowPatientForm] = useState(false);
     const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -81,6 +85,7 @@ export default function Patients() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search patients..."
+                            maxLength={100}
                             className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-700 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>

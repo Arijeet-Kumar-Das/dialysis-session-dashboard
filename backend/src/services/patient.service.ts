@@ -1,5 +1,6 @@
 import Patient, { IPatient } from "../models/Patient";
 import Session from "../models/Session";
+import { getIO } from "../socket";
 
 interface CreatePatientInput {
     name: string;
@@ -29,24 +30,28 @@ export async function createPatient(
     input: CreatePatientInput
 ): Promise<IPatient> {
     const patient = new Patient(input);
-    return patient.save();
+    const saved = await patient.save();
+    getIO()?.emit("patient:created", saved);
+    return saved;
 }
 
 export async function updatePatient(
     id: string,
     input: UpdatePatientInput
 ): Promise<IPatient | null> {
-    return Patient.findByIdAndUpdate(id, input, {
+    const updated = await Patient.findByIdAndUpdate(id, input, {
         new: true,
         runValidators: true,
     });
+    if (updated) getIO()?.emit("patient:updated", updated);
+    return updated;
 }
 
 export async function deletePatient(id: string): Promise<IPatient | null> {
     const patient = await Patient.findByIdAndDelete(id);
     if (patient) {
-        // Remove all sessions belonging to this patient
         await Session.deleteMany({ patientId: id });
+        getIO()?.emit("patient:deleted", { id });
     }
     return patient;
 }

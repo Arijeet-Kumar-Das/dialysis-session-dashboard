@@ -12,7 +12,7 @@ const connectDB = async (): Promise<void> => {
         console.log("MongoDB connected successfully");
     } catch (error) {
         console.error("MongoDB connection failed:", error);
-        process.exit(1); // crash fast — don't run app without DB
+        process.exit(1);
     }
 };
 
