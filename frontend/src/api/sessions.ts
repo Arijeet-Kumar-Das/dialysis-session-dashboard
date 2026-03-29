@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { ApiResponse, Session } from "../types";
 
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = "https://dialysis-session-dashboard.vercel.app/api";
 
 export async function fetchTodaySessions(date?: string, unit?: string): Promise<Session[]> {
     const params = new URLSearchParams();
