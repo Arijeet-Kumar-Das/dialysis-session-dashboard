@@ -1,22 +1,14 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
+
 import app from "../src/index";
 
-dotenv.config();
 
-// We use a separate test database so we don't pollute real data
-const TEST_DB_URI =
-    process.env.MONGODB_URI?.replace("/dialysis", "/dialysis_test") ??
-    "mongodb://localhost:27017/dialysis_test";
-
-beforeAll(async () => {
-    await mongoose.connect(TEST_DB_URI);
-});
 
 afterAll(async () => {
-    await mongoose.connection.dropDatabase(); // clean up test DB after tests
-    await mongoose.connection.close();
+    await mongoose.connection.collection("sessions").deleteMany({});
+    await mongoose.connection.collection("patients").deleteMany({});
+    await mongoose.disconnect();
 });
 
 describe("Patient API", () => {
@@ -54,7 +46,6 @@ describe("Patient API", () => {
 describe("Session API", () => {
     let patientId: string;
 
-    // Create a patient first to use in session tests
     beforeAll(async () => {
         const res = await request(app).post("/api/patients").send({
             name: "Session Test Patient",
@@ -71,9 +62,9 @@ describe("Session API", () => {
             .send({
                 patientId,
                 scheduledDate: new Date().toISOString(),
-                preWeight: 75,       // 5kg over dry weight → anomaly
-                systolicBP: 185,     // over 180 → anomaly
-                durationMinutes: 90, // under 120 → anomaly
+                preWeight: 75,
+                systolicBP: 185,
+                durationMinutes: 90,
                 machineId: "M-101",
                 status: "in_progress",
             });
