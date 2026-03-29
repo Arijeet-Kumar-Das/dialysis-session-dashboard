@@ -26,13 +26,21 @@ interface UpdateSessionInput {
     machineId?: string;
 }
 
-export async function getTodaySessions(unit?: string): Promise<ISession[]> {
+export async function getTodaySessions(date?: string, unit?: string): Promise<ISession[]> {
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    let startOfDay: Date;
+    let endOfDay: Date;
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    if (date) {
+        // Parse YYYY-MM-DD and build range in local server time
+        startOfDay = new Date(date + "T00:00:00");
+        endOfDay = new Date(date + "T23:59:59.999");
+    } else {
+        startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+    }
 
     const query: any = {
         scheduledDate: { $gte: startOfDay, $lte: endOfDay },

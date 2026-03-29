@@ -9,9 +9,39 @@ import EmptyState from "../components/ui/EmptyState";
 
 const UNIT_OPTIONS = ["All Units", "Ward-A", "Ward-B", "ICU", "General"];
 
+/* ── Date helpers ── */
+function toDateString(d: Date): string {
+    return d.toISOString().slice(0, 10);
+}
+
+function getTodayString(): string {
+    return toDateString(new Date());
+}
+
+function shiftDate(dateStr: string, days: number): string {
+    const d = new Date(dateStr + "T12:00:00"); // noon avoids DST edge-cases
+    d.setDate(d.getDate() + days);
+    return toDateString(d);
+}
+
+function formatReadableDate(dateStr: string): string {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
+}
+
 export default function Dashboard() {
+    const today = getTodayString();
+    const [selectedDate, setSelectedDate] = useState(today);
     const [selectedUnit, setSelectedUnit] = useState("");
+    const isToday = selectedDate === today;
+
     const { sessions, loading, error, refresh, lastUpdated } = useSessions(
+        selectedDate,
         selectedUnit || undefined
     );
     const { patients } = usePatients();
@@ -48,10 +78,70 @@ export default function Dashboard() {
     const inProgressSessions = sessions.filter((s) => s.status === "in_progress").length;
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-6 py-0">
+            {/* ── Date Navigation Bar ── */}
+            <div className="bg-white border-b border-slate-100 -mx-6 px-6 py-3 mb-6">
+                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
+                            className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 transition-colors"
+                        >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Prev Day
+                        </button>
+
+                        <span className="text-sm font-semibold text-slate-700 px-3">
+                            {formatReadableDate(selectedDate)}
+                        </span>
+
+                        <button
+                            onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
+                            disabled={isToday}
+                            className={`flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                                isToday
+                                    ? "text-slate-300 border-slate-100 cursor-not-allowed"
+                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-slate-200"
+                            }`}
+                        >
+                            Next Day
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* Today pill — only visible when not on today */}
+                    {!isToday && (
+                        <button
+                            onClick={() => setSelectedDate(today)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-full transition-colors"
+                        >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Jump to Today
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Past-date banner */}
+            {!isToday && (
+                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs animate-fade-in-up">
+                    📅 Viewing records for <span className="font-semibold">{formatReadableDate(selectedDate)}</span> — not today's live data.
+                </div>
+            )}
+
             {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
-                <StatCard label="Today's Sessions" value={totalSessions} color="text-slate-700" />
+                <StatCard
+                    label={isToday ? "Today's Sessions" : "Sessions"}
+                    value={totalSessions}
+                    color="text-slate-700"
+                />
                 <StatCard label="In Progress" value={inProgressSessions} color="text-amber-600" />
                 <StatCard label="Completed" value={completedSessions} color="text-emerald-600" />
                 <StatCard
@@ -69,7 +159,7 @@ export default function Dashboard() {
             >
                 <div className="flex items-center gap-3">
                     <h2 className="text-slate-700 font-semibold text-sm">
-                        {onlyAnomalies ? "Patients with Anomalies" : "All Patients Today"}
+                        {onlyAnomalies ? "Patients with Anomalies" : isToday ? "All Patients Today" : "All Patients"}
                         <span className="ml-2 text-slate-400 font-normal">
                             ({filteredSessions.length})
                         </span>
@@ -141,11 +231,13 @@ export default function Dashboard() {
                 <Spinner />
             ) : filteredSessions.length === 0 ? (
                 <EmptyState
-                    title={onlyAnomalies ? "No anomalies found" : "No sessions today"}
+                    title={onlyAnomalies ? "No anomalies found" : isToday ? "No sessions today" : "No sessions on this date"}
                     description={
                         onlyAnomalies
                             ? "All patients are within normal parameters. Great work!"
-                            : "No sessions are scheduled for today. Add a new session to get started."
+                            : isToday
+                                ? "No sessions are scheduled for today. Add a new session to get started."
+                                : `No sessions were recorded for ${formatReadableDate(selectedDate)}.`
                     }
                 />
             ) : (

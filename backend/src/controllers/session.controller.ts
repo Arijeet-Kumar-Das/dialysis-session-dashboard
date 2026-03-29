@@ -7,8 +7,9 @@ export async function getTodaySessions(
     next: NextFunction
 ): Promise<void> {
     try {
+        const date = req.query.date as string | undefined;
         const unit = req.query.unit as string | undefined;
-        const sessions = await sessionService.getTodaySessions(unit);
+        const sessions = await sessionService.getTodaySessions(date, unit);
         res.status(200).json({ success: true, data: sessions });
     } catch (error) {
         next(error);

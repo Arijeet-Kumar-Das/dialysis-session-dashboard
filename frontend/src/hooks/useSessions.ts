@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "../types";
 import { fetchTodaySessions } from "../api/sessions";
 
-export function useSessions(unit?: string) {
+export function useSessions(date?: string, unit?: string) {
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -10,7 +10,7 @@ export function useSessions(unit?: string) {
 
     const load = (showSpinner: boolean) => {
         if (showSpinner) setLoading(true);
-        fetchTodaySessions(unit)
+        fetchTodaySessions(date, unit)
             .then((data) => {
                 setSessions(data);
                 setLastUpdated(new Date());
@@ -30,7 +30,7 @@ export function useSessions(unit?: string) {
         load(true);
         const interval = setInterval(() => load(false), 30000);
         return () => clearInterval(interval);
-    }, [unit]);
+    }, [date, unit]);
 
     return { sessions, loading, error, refresh, lastUpdated };
 }

@@ -3,9 +3,13 @@ import type { ApiResponse, Session } from "../types";
 
 const BASE_URL = "http://localhost:5000/api";
 
-export async function fetchTodaySessions(unit?: string): Promise<Session[]> {
-    const url = unit
-        ? `${BASE_URL}/sessions/today?unit=${encodeURIComponent(unit)}`
+export async function fetchTodaySessions(date?: string, unit?: string): Promise<Session[]> {
+    const params = new URLSearchParams();
+    if (date) params.set("date", date);
+    if (unit) params.set("unit", unit);
+    const qs = params.toString();
+    const url = qs
+        ? `${BASE_URL}/sessions/today?${qs}`
         : `${BASE_URL}/sessions/today`;
     const res = await axios.get<ApiResponse<Session[]>>(url);
     return res.data.data;
