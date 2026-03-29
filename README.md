@@ -109,7 +109,7 @@ cd backend
 npm install
 ```
 
-Create a `.env` file inside `backend/`:
+Create a `.env` file inside `backend/` (use `.env.example` as reference):
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_atlas_connection_string
