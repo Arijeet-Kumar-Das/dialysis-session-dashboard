@@ -55,18 +55,18 @@ export default function Patients() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in-up">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 animate-fade-in-up">
                 <div>
                     <h2 className="text-slate-800 font-semibold text-lg">All Patients</h2>
                     <p className="text-slate-400 text-sm mt-0.5">
                         {patients.length} registered patient{patients.length !== 1 ? "s" : ""}
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     {/* Search */}
-                    <div className="relative">
+                    <div className="relative flex-1 sm:flex-initial">
                         <svg
                             className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400"
                             fill="none"
@@ -86,7 +86,7 @@ export default function Patients() {
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search patients..."
                             maxLength={100}
-                            className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-700 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-700 w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
                     <button
@@ -94,7 +94,7 @@ export default function Patients() {
                             setEditingPatient(null);
                             setShowPatientForm(true);
                         }}
-                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm"
+                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 sm:px-4 py-2.5 rounded-lg transition-colors shadow-sm whitespace-nowrap"
                     >
                         <span>+</span> Add Patient
                     </button>

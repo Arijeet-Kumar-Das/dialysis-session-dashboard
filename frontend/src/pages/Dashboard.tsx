@@ -93,35 +93,37 @@ export default function Dashboard() {
     const inProgressSessions = sessions.filter((s) => s.status === "in_progress").length;
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-0">
             {/* ── Date Navigation Bar ── */}
-            <div className="bg-white border-b border-slate-100 -mx-6 px-6 py-3 mb-6">
+            <div className="bg-white border-b border-slate-100 -mx-3 sm:-mx-6 px-3 sm:px-6 py-3 mb-4 sm:mb-6">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
-                            className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 transition-colors"
+                            className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 px-2.5 sm:px-3 py-2 rounded-lg border border-slate-200 transition-colors"
                         >
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
-                            Prev Day
+                            <span className="hidden xs:inline">Prev Day</span>
+                            <span className="xs:hidden">Prev</span>
                         </button>
 
-                        <span className="text-sm font-semibold text-slate-700 px-3">
+                        <span className="text-xs sm:text-sm font-semibold text-slate-700 px-2 sm:px-3 text-center">
                             {formatReadableDate(selectedDate)}
                         </span>
 
                         <button
                             onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}
                             disabled={isToday}
-                            className={`flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                            className={`flex items-center gap-1 text-xs font-medium px-2.5 sm:px-3 py-2 rounded-lg border transition-colors ${
                                 isToday
                                     ? "text-slate-300 border-slate-100 cursor-not-allowed"
                                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-slate-200"
                             }`}
                         >
-                            Next Day
+                            <span className="hidden xs:inline">Next Day</span>
+                            <span className="xs:hidden">Next</span>
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
@@ -145,13 +147,13 @@ export default function Dashboard() {
 
             {/* Past-date banner */}
             {!isToday && (
-                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs animate-fade-in-up">
+                <div className="mb-4 px-3 sm:px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs animate-fade-in-up">
                     📅 Viewing records for <span className="font-semibold">{formatReadableDate(selectedDate)}</span> — not today's live data.
                 </div>
             )}
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6 animate-fade-in-up">
                 <StatCard
                     label={isToday ? "Today's Sessions" : "Sessions"}
                     value={totalSessions}
@@ -160,22 +162,23 @@ export default function Dashboard() {
                 <StatCard label="In Progress" value={inProgressSessions} color="text-amber-600" />
                 <StatCard label="Completed" value={completedSessions} color="text-emerald-600" />
                 <StatCard
-                    label="Anomalies Detected"
+                    label="Anomalies"
                     value={anomalySessions}
                     color="text-red-500"
                     highlight={anomalySessions > 0}
                 />
             </div>
 
-            {/* Filter Bar */}
+            {/* Filter Bar — stacks nicely on mobile */}
             <div
-                className="flex flex-wrap items-center justify-between gap-3 mb-5 animate-fade-in-up"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 animate-fade-in-up"
                 style={{ animationDelay: "80ms" }}
             >
-                <div className="flex items-center gap-3">
-                    <h2 className="text-slate-700 font-semibold text-sm">
-                        {onlyAnomalies ? "Patients with Anomalies" : isToday ? "All Patients Today" : "All Patients"}
-                        <span className="ml-2 text-slate-400 font-normal">
+                {/* Title + Updated */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <h2 className="text-slate-700 font-semibold text-sm whitespace-nowrap">
+                        {onlyAnomalies ? "Anomalies" : isToday ? "All Patients Today" : "All Patients"}
+                        <span className="ml-1.5 text-slate-400 font-normal">
                             ({filteredSessions.length})
                         </span>
                     </h2>
@@ -186,7 +189,9 @@ export default function Dashboard() {
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Controls row — wraps into 2 lines on mobile */}
+                <div className="flex flex-wrap items-center gap-2">
                     {/* View Toggle */}
                     <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
                         <button
@@ -221,7 +226,7 @@ export default function Dashboard() {
                     <select
                         value={selectedUnit}
                         onChange={(e) => setSelectedUnit(e.target.value)}
-                        className="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="text-xs font-medium px-2.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                     >
                         {UNIT_OPTIONS.map((u) => (
                             <option key={u} value={u === "All Units" ? "" : u}>
@@ -230,30 +235,37 @@ export default function Dashboard() {
                         ))}
                     </select>
 
-                    {/* Anomaly Filter */}
+                    {/* Anomaly Filter — compact on mobile */}
                     <button
                         onClick={() => setOnlyAnomalies((prev) => !prev)}
-                        className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                        className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-lg border transition-colors ${
                             onlyAnomalies
                                 ? "bg-red-50 border-red-200 text-red-600"
                                 : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
                         }`}
                     >
                         <span
-                            className={`w-2 h-2 rounded-full ${
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                 onlyAnomalies ? "bg-red-500" : "bg-slate-300"
                             }`}
                         />
-                        {onlyAnomalies ? "Showing anomalies only" : "Filter: Anomalies only"}
+                        <span className="hidden sm:inline">
+                            {onlyAnomalies ? "Showing anomalies" : "Anomalies only"}
+                        </span>
+                        <span className="sm:hidden">
+                            {onlyAnomalies ? "Anomalies" : "Anomalies"}
+                        </span>
                         {anomalySessions > 0 && (
                             <span className="bg-red-500 text-white text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-mono leading-none">
                                 {anomalySessions}
                             </span>
                         )}
                     </button>
+
+                    {/* New Session — full width on very small screens */}
                     <button
                         onClick={handleNewSession}
-                        className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+                        className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
                     >
                         <span>+</span> New Session
                     </button>
@@ -262,7 +274,7 @@ export default function Dashboard() {
 
             {/* Error Banner */}
             {error && (
-                <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+                <div className="mb-4 px-3 sm:px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
                     ⚠️ {error} — Showing last known data.
                 </div>
             )}
@@ -282,7 +294,7 @@ export default function Dashboard() {
                     }
                 />
             ) : viewMode === "grid" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                     {filteredSessions.map((session, i) => (
                         <div
                             key={session._id}
@@ -333,12 +345,12 @@ function StatCard({
 }) {
     return (
         <div
-            className={`bg-white rounded-xl px-5 py-4 border transition-all ${
+            className={`bg-white rounded-xl px-3 sm:px-5 py-3 sm:py-4 border transition-all ${
                 highlight ? "border-red-100 shadow-red-50 shadow-md" : "border-slate-100"
             }`}
         >
-            <p className="text-slate-400 text-xs mb-1">{label}</p>
-            <p className={`font-mono font-bold text-2xl ${color}`}>{value}</p>
+            <p className="text-slate-400 text-[11px] sm:text-xs mb-1 truncate">{label}</p>
+            <p className={`font-mono font-bold text-xl sm:text-2xl ${color}`}>{value}</p>
         </div>
     );
 }
@@ -411,18 +423,18 @@ function ScheduleTimeline({
                                 </div>
                             )}
 
-                            <div className={`flex border-b border-slate-50 min-h-[72px] ${isCurrentHour ? "bg-blue-50/30" : ""}`}>
+                            <div className={`flex border-b border-slate-50 min-h-[64px] sm:min-h-[72px] ${isCurrentHour ? "bg-blue-50/30" : ""}`}>
                                 {/* Time label */}
-                                <div className="w-20 flex-shrink-0 px-4 py-3 border-r border-slate-100">
-                                    <span className="font-mono text-xs text-slate-400">
+                                <div className="w-14 sm:w-20 flex-shrink-0 px-2 sm:px-4 py-3 border-r border-slate-100">
+                                    <span className="font-mono text-[11px] sm:text-xs text-slate-400">
                                         {hour.toString().padStart(2, "0")}:00
                                     </span>
                                 </div>
 
                                 {/* Session cards */}
-                                <div className="flex-1 px-3 py-2">
+                                <div className="flex-1 px-2 sm:px-3 py-2 min-w-0">
                                     {sessionsInSlot.length === 0 ? (
-                                        <p className="text-slate-300 text-xs py-2">No sessions scheduled</p>
+                                        <p className="text-slate-300 text-xs py-2">No sessions</p>
                                     ) : (
                                         <div className="flex flex-wrap gap-2">
                                             {sessionsInSlot.map((session) => (
@@ -466,15 +478,15 @@ function TimelineCard({ session, onClick }: { session: Session; onClick: () => v
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-3 ${bg} rounded-lg px-3 py-2 text-left hover:shadow-sm transition-all cursor-pointer border border-transparent hover:border-slate-200 ${
+            className={`flex items-center gap-2 sm:gap-3 ${bg} rounded-lg px-2.5 sm:px-3 py-2 text-left hover:shadow-sm transition-all cursor-pointer border border-transparent hover:border-slate-200 ${
                 hasAnomaly ? "border-l-[3px] !border-l-red-400" : ""
             }`}
         >
             <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-slate-700 truncate">
+                <p className="text-xs sm:text-sm font-medium text-slate-700 truncate">
                     {session.patientId.name}
                 </p>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
                     {session.machineId && (
                         <span className="text-[10px] font-mono text-slate-400">
                             {session.machineId}
