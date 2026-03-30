@@ -164,8 +164,8 @@ cd backend
 npx ts-node src/scripts/seed.ts
 ```
 
-This creates 4 patients across Ward-A, Ward-B, and ICU with
-10 sessions including anomaly-triggering data for testing.
+This creates 6 patients across Ward-A, Ward-B, and ICU with
+15 sessions including anomaly-triggering data for testing.
 
 ---
 
